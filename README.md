@@ -10,12 +10,12 @@ To install KattisPDF just use `pip`:
 pip install kattispdf
 ```
 
-It is necessary to install a LaTeX processor such as [TeX Live](https://tug.org/texlive/) or [MiKTeX](https://miktex.org/). As [PyLaTeX](https://github.com/JelteF/PyLaTeX/tree/master) is used and it needs `pdflatex` or `latexmk` to create the pdf.
+It is necessary to install a LaTeX processor such as [TeX Live](https://tug.org/texlive/) or [MiKTeX](https://miktex.org/). As [PyLaTeX](https://github.com/JelteF/PyLaTeX/tree/master) is used and it needs `pdflatex` or `latexmk` (Recommended) to create the pdf.
 
 ### Linux
 `latexmk` is available in almost every package manager. Search it on your favourite package manager.
 ### Windows
-In order to use`latexmk` in Windows you need to have installed `perl`.
+In order to use`latexmk` in Windows you need to install `perl`.
 
 ```
 # If you have pearl install you can omit this
