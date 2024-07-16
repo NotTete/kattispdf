@@ -19,7 +19,7 @@ In order to use`latexmk` in Windows you need to install `perl`.
 
 ```
 # If you have pearl install you can omit this
-winget install "Strawberry Pearl" 
+winget install "Strawberry Perl" 
 ```
 ```
 winget install MiKTeX
