@@ -15,10 +15,16 @@ It is necessary to install a LaTeX processor such as [TeX Live](https://tug.org/
 ### Linux
 
 ### Windows
-- __Winget__
+In order to use`latexmk` in Windows you need to have installed `perl`.
+
 ```
-winget install MiKTeX.MiKTeX
+# If you have pearl install you can omit this
+winget install "Strawberry Pearl" 
 ```
+```
+winget install MiKTeX
+```
+Once you are done reboot your device
 ## How to use
 KattisPDF includes a CLI tool `kpdf` to download the problems automaticly, but it can also be used in a python script.
 ### CLI Tool
