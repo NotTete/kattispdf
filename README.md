@@ -24,7 +24,7 @@ winget install "Strawberry Pearl"
 ```
 winget install MiKTeX
 ```
-Once you are done reboot your device
+Once you are done reboot your device.
 ## How to use
 KattisPDF includes a CLI tool `kpdf` to download the problems automaticly, but it can also be used in a python script.
 ### CLI Tool
