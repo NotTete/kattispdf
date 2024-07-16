@@ -1,21 +1,23 @@
 [project]
-name = "example_package_YOUR_USERNAME_HERE"
-version = "0.0.1"
+name = "kattispdf"
+version = "0.0.4"
 authors = [
-  { name="Example Author", email="author@example.com" },
+  { name="Jorge Hdez", email="jorgehdezplp@proton.me" },
 ]
-description = "A small example package"
+description = "It enables you to download pdf with problems from https://open.kattis.com"
 readme = "README.md"
 requires-python = ">=3.8"
+dependencies = ["pylatex", "bs4", "requests"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
 ]
 
 [project.urls]
-Homepage = "https://github.com/pypa/sampleproject"
-Issues = "https://github.com/pypa/sampleproject/issues"
+Homepage = "https://github.com/NotTete/kattispdf"
+
+[project.scripts]
+kpdf = "kattispdf:cli"
 
 [build-system]
 requires = ["hatchling", "pylatex", "bs4", "requests"]

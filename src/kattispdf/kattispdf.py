@@ -431,8 +431,9 @@ def _generate_tabular(document, element):
         for column in filter(lambda x: x.name != None, row):
             text = ""
             column = column.find("p")
-            for tag in column:
-                text += _process_text(tag)
+            if(column != None):
+                for tag in column:
+                    text += _process_text(tag)
             current_row.append(text)
         rows.append(current_row)
     
@@ -604,8 +605,18 @@ def generate_pdf(problem: str, path = None):
         
         if(path == None):
             path = problem
-            
-        document.generate_pdf(clean_tex=True, filepath=problem)
+        else:
+            path = path.with_suffix("")
+
+        document.generate_pdf(clean_tex=True, filepath=path)
+    
+    except KeyboardInterrupt:
+        extensions = [".aux", ".log", ".out", ".fls", ".fdb_latexmk", ".tex", ".pdf"]
+        for ext in extensions:
+            try:
+                os.remove(path.with_suffix(ext))
+            except (FileNotFoundError):
+                pass
     finally:
         for path in _files_to_remove:
             os.remove(path)
