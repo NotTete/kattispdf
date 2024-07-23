@@ -39,6 +39,27 @@ class Verb(pylatex.base_classes.Environment):
     _latex_name="verbatim"
     content_separator=""
 
+class Minipage(pylatex.base_classes.Environment):
+    _repr_attributes_mapping = {
+        "width": "arguments",
+    }
+
+    _latex_name="minipage"
+
+    def __init__(self, width):
+        self.width = width
+        super().__init__(arguments=[width])
+
+class Hspace(pylatex.base_classes.CommandBase):
+    _repr_attributes_mapping = {
+        "width": "arguments",
+    }
+
+    _latex_name="hspace"
+
+    def __init__(self, width):
+        self.width = width
+        super().__init__(arguments=[width])
 
 class Href(pylatex.base_classes.CommandBase):
     _repr_attributes_mapping = {
@@ -153,11 +174,12 @@ class Parbox(pylatex.base_classes.CommandBase):
 class Tcolorbox(pylatex.base_classes.Environment):
     _repr_attributes_mapping = {
         "text": "arguments",
+        "options": "options"
     }
-    packages = [Package("tcolorbox")]
+    packages = [Package("xcolor", options=["usenames", "dvipsnames"]), Package("tcolorbox")]
 
-    def __init__(self, text):
-        super().__init__(arguments=[text])   
+    def __init__(self, text, options=None):
+        super().__init__(arguments=[text], options=[NoEscape(options)])   
 
 def strikethrough(text):
     """Needs soul package"""
@@ -279,6 +301,23 @@ def _generate_header(problem: str, document: Document, parser: BeautifulSoup):
     document.change_document_style(style)
     return metadata
 
+def _generate_minipage(document, element, path):
+    width = element.get("style")
+    start_index = width.find("width:") + 6
+    end_index = width[start_index:].find(" ")
+    if(end_index == -1):
+        width = NoEscape(width[start_index:])
+
+    else:
+        end_index += start_index
+        width = NoEscape(width[start_index:end_index])
+
+    minipage = Minipage(width)
+    _process_content(minipage, element, path)
+    document.append(minipage)
+    document.append(NoEscape(r"\vskip0pt"))
+
+
 def _generate_pre(document, element):
     text = NoEscape(element.get_text())
     enviroment = Verb()
@@ -302,7 +341,7 @@ def _process_text(tag):
             delimiter="^"
         if delimiter == "^" and tag_text.find("^") != -1:
             delimiter="<"
-        return verbatim(tag_text, delimiter=delimiter)
+        return verbatim(tag_text.replace("\n", " "), delimiter=delimiter)
     elif(tag.name == "a"):
         return _get_href(tag)
     elif(tag.name == "del"):
@@ -343,7 +382,11 @@ def _get_href(element):
 
 def _generate_figure(document, element, path):
     image_tag = element.find("img")
-    image_url = image_tag.get("src")
+    if(image_tag != None):
+        image_url = image_tag.get("src")
+    else:
+        _process_content(document,element,path)
+        return
     caption_tag = element.find("div", { "class": "caption" })
 
     width = image_tag.get("alt")
@@ -430,20 +473,29 @@ def _generate_tabular(document, element):
         current_row =[]
         for column in filter(lambda x: x.name != None, row):
             text = ""
-            column = column.find("p")
-            if(column != None):
-                for tag in column:
-                    text += _process_text(tag)
-            current_row.append(text)
+
+            column_p = column.find("p")
+            if(column_p == None):
+                column_p = column
+
+            for tag in column_p:
+                text += _process_text(tag)
+
+            if(column.name == "th"):
+                current_row.append(bold(text))
+            else:
+                current_row.append(text)
         rows.append(current_row)
-    
     td = element.find("td")
+    if(td == None):
+        td = element.find("th")
+    
     style = td.get("style")
 
     has_border_top = style.find("border-top") != -1
     has_border_sides = style.find("border-right") != -1
 
-    separator = ""
+    separator = " "
     if(has_border_sides):
         separator = "|"
 
@@ -517,7 +569,7 @@ def _process_content(document: Document, content: BeautifulSoup, path):
             document.append(NoEscape(text))
             text = ""
             _generate_quote(document, tag)
-        elif tag.name == "table" and "tabular" in tag.get("class"):
+        elif tag.name == "table" and ("tabular" in tag.get("class") or "sample" in tag.get("class")):
             document.append(NoEscape(text))
             text = ""
             _generate_tabular(document, tag)
@@ -528,7 +580,19 @@ def _process_content(document: Document, content: BeautifulSoup, path):
         elif tag.name == "table" and "sample" in tag.get("class"):
             document.append(NoEscape(text))
             text = ""
-            _generate_sample(document, tag, path)            
+            _generate_sample(document, tag, path)        
+        elif tag.name == "div" and "minipage" in tag.get("class"):
+            document.append(NoEscape(text))
+            text = ""
+            _generate_minipage(document, tag, path)  
+        elif tag.name == "div" and "sampleinteractionwrite" in tag.get("class"):
+            document.append(NoEscape(text))
+            text = ""
+            _generate_interactive_write(document, tag, path)  
+        elif tag.name == "div" and "sampleinteractionread" in tag.get("class"):
+            document.append(NoEscape(text))
+            text = ""
+            _generate_interactive_read(document, tag, path)  
         else:
             text += _process_text(tag)
     document.append(NoEscape(text))
@@ -550,14 +614,30 @@ def _generate_sample(document, element, path):
     for element in elements:
         document.append(Tcolorbox(dumps_list(element, escape=False, token=" ") + NoEscape("\n")))
 
+def _generate_interactive_write(document, element, path):
+    content = []
+    _process_content(content, element, path)
+    document.append(Tcolorbox(dumps_list(content, escape=False, token=" ") + NoEscape("\n"), """colback=lime!10, grow to left by=-10mm"""))
+
+def _generate_interactive_read(document, element, path):
+    content = []
+    _process_content(content, element, path)
+    document.append(Tcolorbox(dumps_list(content, escape=False, token=" ") + NoEscape("\n"), """colback=yellow!10, grow to right by=-10mm"""))
+
 def _generate_content(problem: str, document: Document, parser: BeautifulSoup, metadata, path):
     content = parser.find("div", { "book-page-fixed_width"})
     title = escape_latex(content.find("h1").get_text())
     title += r" \mdseries\large" + f"{metadata.memory_limit}, {metadata.time_limit}"
     document.append(Section(NoEscape(title), numbering=False))
 
-    content = content.find("div", { "class": "problembody" })
-    _process_content(document, content, path)
+    body = content.find("div", { "class": "problembody" })
+    _process_content(document, body, path)
+
+    foot = content.find("div", { "class": "footnotes" })
+
+    if(foot != None):
+        _process_content(document, foot, path)
+
 
 def _get_document() -> Document:
     # Geometry setup
@@ -570,10 +650,6 @@ def _get_document() -> Document:
     }
 
     document = Document(geometry_options=geometry_settings)
-
-    # Hypereference setup
-    hyperref_config = Hypersetup(colorlinks=True, urlcolor="black")
-    document.preamble.append(hyperref_config)
 
     # Extra packages setup
     packages = [
@@ -589,6 +665,12 @@ def _get_document() -> Document:
     for package, options in packages:
         document.preamble.append(Package(package, options=options))
 
+    # Hypereference setup
+    hyperref_config = Hypersetup(colorlinks=True, urlcolor="black")
+    document.preamble.append(hyperref_config)
+
+
+
     # Wrapfigure sep
     document.preamble.append(NoEscape(r"\setlength{\intextsep}{0pt}"))
 
@@ -598,7 +680,7 @@ def generate_pdf(problem: str, path = None):
     global sample_number
     try:
         if(path == None):
-            path = problem
+            path = Path(problem)
         else:
             path = path.with_suffix("")
 

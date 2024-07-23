@@ -2,6 +2,7 @@ import kattispdf
 import argparse
 import pathlib
 
+
 def cli():
     parser = argparse.ArgumentParser(prog='kpdf')
 
@@ -10,3 +11,5 @@ def cli():
     args = parser.parse_args()
 
     kattispdf.generate_pdf(args.problem, args.path)
+
+cli()
