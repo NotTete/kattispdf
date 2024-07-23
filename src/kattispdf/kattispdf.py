@@ -183,15 +183,15 @@ def _random_image_path() -> str:
     random_file += ".png"
     return random_file
 
-def _load_image(url) -> str:
+def _load_image(url, path) -> str:
     if(len(url) <= 8 or url[:8] != "https://"):
         url = _kattis_url() + url
 
-    path = _random_image_path()
+    path = Path(path, _random_image_path())
     request = requests.get(url, stream=True)
     request.raise_for_status()
     with open(path, 'wb') as file:
-        for chunk in request:
+        for chunk in request.iter_content(1024):
             file.write(chunk)
 
     _files_to_remove.append(path)
@@ -310,14 +310,14 @@ def _process_text(tag):
     else:
         return tag_text.replace("\n", " ")
 
-def _generate_paragraph(document, element):
+def _generate_paragraph(document, element, path):
     if(element.name == "p"):
         document.append(NewParagraph())
     text = ""
     for tag in element:
         if(tag != None and tag.name == "img"):
             document.append(NoEscape(text))
-            _generate_image(document, tag)
+            _generate_image(document, tag, path)
             text = ""
         else:
             text += _process_text(tag)
@@ -341,7 +341,7 @@ def _get_href(element):
 
     return Href(url, text).dumps_as_content()
 
-def _generate_figure(document, element):
+def _generate_figure(document, element, path):
     image_tag = element.find("img")
     image_url = image_tag.get("src")
     caption_tag = element.find("div", { "class": "caption" })
@@ -355,7 +355,7 @@ def _generate_figure(document, element):
         end_index += start_index
 
     width = NoEscape(width[start_index:end_index])
-    image_path = NoEscape(_load_image(image_url))
+    image_path = NoEscape(_load_image(image_url, path).name)
 
     text = ""
     for tag in caption_tag:
@@ -366,7 +366,7 @@ def _generate_figure(document, element):
         fig.add_image(image_path, width=width)
         fig.add_caption(text)
 
-def _generate_itemize(document, element, itemize=True):
+def _generate_itemize(document, element, path, itemize=True):
     enviroment = Itemize()
     if(not itemize):
         enviroment = Enumerate()
@@ -375,15 +375,15 @@ def _generate_itemize(document, element, itemize=True):
         for tag in filter(lambda x: x.name == "li", element):
             container = []
             for element in filter(lambda x: x != None, tag):
-                _process_content(container, element)
+                _process_content(container, element, path)
             itemize.add_item(dumps_list(container, escape=False, token=" "))
 
 
 
-def _generate_ilustration(document, element):
+def _generate_ilustration(document, element, path):
     image_tag = element.find("img")
     image_url = image_tag.get("src")
-    image_path = NoEscape(_load_image(image_url))
+    image_path = NoEscape(_load_image(image_url, path).name)
 
     description_tag = element.find("div", {"class": "description"})
     text = r"\footnotesize "
@@ -401,9 +401,9 @@ def _generate_ilustration(document, element):
         fig.add_image(image_path, width=width)
         fig.add_caption(text)
 
-def _generate_image(document, tag):
+def _generate_image(document, tag, path):
     url = tag.get("src")
-    path = NoEscape(_load_image(url))
+    path = NoEscape(_load_image(url, path).name)
 
     width = tag.get("alt")
     start_index = width.find("width=") + 6
@@ -474,7 +474,7 @@ def _generate_tabular(document, element):
 
         document.append(NewParagraph())
         document.append(tabular)
-def _process_content(document: Document, content: BeautifulSoup):
+def _process_content(document: Document, content: BeautifulSoup, path):
     text = ""
     for tag in content:
         if type(tag) == str:
@@ -482,7 +482,7 @@ def _process_content(document: Document, content: BeautifulSoup):
         elif tag.name == "p":
             document.append(NoEscape(text))
             text = ""
-            _generate_paragraph(document, tag)            
+            _generate_paragraph(document, tag, path)            
         elif tag.name == "span" and "tex2jax_process" in tag.get("class"):
             document.append(NoEscape(text))
             text = ""
@@ -498,20 +498,20 @@ def _process_content(document: Document, content: BeautifulSoup):
         elif tag.name == "div" and "figure" in tag.get("class"):
             document.append(NoEscape(text))
             text = ""
-            _generate_figure(document, tag)
+            _generate_figure(document, tag, path)
         elif tag.name == "div" and "illustration" in tag.get("class"):
             document.append(NoEscape(text))
             text = ""
-            _generate_ilustration(document, tag)
+            _generate_ilustration(document, tag, path)
         elif tag.name == "img":
             document.append(NoEscape(text))
             text = ""
-            _generate_image(document, tag)
+            _generate_image(document, tag, path)
         elif tag.name == "center":
             document.append(NoEscape(text))
             text = ""
             center = Center()
-            _process_content(center, tag)
+            _process_content(center, tag, path)
             document.append(center)
         elif tag.name == "blockquote":
             document.append(NoEscape(text))
@@ -524,16 +524,16 @@ def _process_content(document: Document, content: BeautifulSoup):
         elif tag.name == "ul" or tag.name == "ol":
             document.append(NoEscape(text))
             text = ""
-            _generate_itemize(document, tag, tag.name == "ul")
+            _generate_itemize(document, tag, path, tag.name == "ul")
         elif tag.name == "table" and "sample" in tag.get("class"):
             document.append(NoEscape(text))
             text = ""
-            _generate_sample(document, tag)            
+            _generate_sample(document, tag, path)            
         else:
             text += _process_text(tag)
     document.append(NoEscape(text))
 
-def _generate_sample(document, element):
+def _generate_sample(document, element, path):
     global sample_number
     if(sample_number == 0):
         document.append(Subsection(f"Sample", numbering=False))
@@ -544,20 +544,20 @@ def _generate_sample(document, element):
     elements = []
     for td in element.find_all("td"):
         content = []
-        _process_content(content, td)
+        _process_content(content, td, path)
         elements.append(content)
 
     for element in elements:
         document.append(Tcolorbox(dumps_list(element, escape=False, token=" ") + NoEscape("\n")))
 
-def _generate_content(problem: str, document: Document, parser: BeautifulSoup, metadata):
+def _generate_content(problem: str, document: Document, parser: BeautifulSoup, metadata, path):
     content = parser.find("div", { "book-page-fixed_width"})
     title = escape_latex(content.find("h1").get_text())
     title += r" \mdseries\large" + f"{metadata.memory_limit}, {metadata.time_limit}"
     document.append(Section(NoEscape(title), numbering=False))
 
     content = content.find("div", { "class": "problembody" })
-    _process_content(document, content)
+    _process_content(document, content, path)
 
 def _get_document() -> Document:
     # Geometry setup
@@ -597,17 +597,17 @@ def _get_document() -> Document:
 def generate_pdf(problem: str, path = None):
     global sample_number
     try:
-        sample_number = 0    
-        parser = _get_html(problem)
-        document = _get_document()
-        metadata = _generate_header(problem, document, parser)
-        _generate_content(problem, document, parser, metadata)
-        
         if(path == None):
             path = problem
         else:
             path = path.with_suffix("")
 
+        sample_number = 0    
+        parser = _get_html(problem)
+        document = _get_document()
+        metadata = _generate_header(problem, document, parser)
+        _generate_content(problem, document, parser, metadata, path.parent)
+        
         document.generate_pdf(clean_tex=True, filepath=path)
     
     except KeyboardInterrupt:
@@ -618,8 +618,6 @@ def generate_pdf(problem: str, path = None):
             except (FileNotFoundError):
                 pass
     finally:
-        for path in _files_to_remove:
-            os.remove(path)
+        for file in _files_to_remove:
+            file.unlink()
         _files_to_remove.clear()
-
-    
