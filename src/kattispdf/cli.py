@@ -12,4 +12,3 @@ def cli():
 
     kattispdf.generate_pdf(args.problem, args.path)
 
-cli()
