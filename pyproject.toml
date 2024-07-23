@@ -1,6 +1,6 @@
 [project]
 name = "kattispdf"
-version = "1.0.4"
+version = "1.0.5"
 authors = [
   { name="Jorge Hdez", email="jorgehdezplp@proton.me" },
 ]
