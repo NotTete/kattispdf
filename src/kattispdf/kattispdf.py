@@ -179,7 +179,9 @@ class Tcolorbox(pylatex.base_classes.Environment):
     packages = [Package("xcolor", options=["usenames", "dvipsnames"]), Package("tcolorbox")]
 
     def __init__(self, text, options=None):
-        super().__init__(arguments=[text], options=[NoEscape(options)])   
+        if(options != None):
+            options = NoEscape(options)
+        super().__init__(arguments=[text], options=options)   
 
 def strikethrough(text):
     """Needs soul package"""
@@ -489,7 +491,6 @@ def _generate_tabular(document, element):
     td = element.find("td")
     if(td == None):
         td = element.find("th")
-    
     style = td.get("style")
 
     has_border_top = style.find("border-top") != -1
@@ -569,7 +570,7 @@ def _process_content(document: Document, content: BeautifulSoup, path):
             document.append(NoEscape(text))
             text = ""
             _generate_quote(document, tag)
-        elif tag.name == "table" and ("tabular" in tag.get("class") or "sample" in tag.get("class")):
+        elif tag.name == "table" and "tabular" in tag.get("class"):
             document.append(NoEscape(text))
             text = ""
             _generate_tabular(document, tag)
