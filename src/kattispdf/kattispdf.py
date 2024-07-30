@@ -403,14 +403,14 @@ def _generate_figure(document, element, path):
     image_path = NoEscape(_load_image(image_url, path).name)
 
     if caption_tag != None:
-        text = ""
         for tag in caption_tag:
             text += _process_text(tag)
         text = NoEscape(text)
 
     with document.create(Figure(position='h')) as fig:
         fig.add_image(image_path, width=width)
-        fig.add_caption(text)
+        if caption_tag != None:
+            fig.add_caption(text)
 
 def _generate_itemize(document, element, path, itemize=True):
     enviroment = Itemize()
