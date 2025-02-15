@@ -106,11 +106,11 @@ class Hypersetup(pylatex.base_classes.CommandBase):
         #PDF options
         arguments += f"bookmarks={str(bookmarks).lower()},"
         arguments += f"bookmarksopen={str(bookmarksopen).lower()},"
-        arguments += f"citebordercolor={" ".join(map(str, citebordercolor))},"
-        arguments += f"filebordercolor={" ".join(map(str, filebordercolor))},"
-        arguments += f"linkbordercolor={" ".join(map(str, linkbordercolor))},"
-        arguments += f"menubordercolor={" ".join(map(str, menubordercolor))},"
-        arguments += f"urlbordercolor ={" ".join(map(str, urlbordercolor))},"
+        arguments += f"citebordercolor={' '.join(map(str, citebordercolor))},"
+        arguments += f"filebordercolor={' '.join(map(str, filebordercolor))},"
+        arguments += f"linkbordercolor={' '.join(map(str, linkbordercolor))},"
+        arguments += f"menubordercolor={' '.join(map(str, menubordercolor))},"
+        arguments += f"urlbordercolor ={' '.join(map(str, urlbordercolor))},"
         arguments += f"pdfpagemode={pdfpagemode},"
         if(pdftitle != None):
             arguments += f"pdftitle={pdftitle},"
